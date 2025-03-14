@@ -14,7 +14,7 @@ typedef struct
 typedef struct{
     size_t size;
     size_t capacity;
-    int *data;
+    long double *data;
 } Buffer;
 
 // ============================================================
@@ -33,11 +33,11 @@ static void buffer_resize(Buffer *buffer, size_t new_capacity){
     in my code, anyways need to resize when adding new integer
     the buffer works like an array, but resizable
 */
-static void buffer_write(Buffer *buffer, const int *data, size_t size){
+static void buffer_write(Buffer *buffer, const long double *data, size_t size){
     if(buffer->size + size > buffer->capacity){
         buffer_resize(buffer, buffer->capacity + size);
     }
-    memcpy(buffer->data + (buffer->size / sizeof(int)), data, size);
+    memcpy(buffer->data + (buffer->size / sizeof(long double)), data, size);
     buffer->size += size;
 }
 
@@ -52,7 +52,7 @@ static void buffer_free(Buffer *buffer){
     read from buffer, similar to read from array.
     Because data is set as integer type, so buffer->data always read 4 bytes.
 */
-static int buffer_read(Buffer *buffer, size_t index, int *out_value){
+static int buffer_read(Buffer *buffer, size_t index, long double *out_value){
     if (index >= buffer->size){
         return 0;
     }
@@ -144,16 +144,16 @@ String_View sv_chop_left(String_View *sv, size_t n){
     return false, if cannot find c
 */
 
-bool sv_index_of(String_View sv, char c, size_t *index){
+int sv_index_of(String_View sv, char c, size_t *index){
     size_t i = 0;
     while(i < sv.count && sv.data[i] != c){
         i += 1;
     }
     if(i < sv.count){
         *index = i;
-        return true;
+        return 1;
     } else {
-        return false;
+        return 0;
     }
 }
 
@@ -188,23 +188,23 @@ String_View sv_chop_by_delim(String_View *sv, char delim){
 }
 
 // search linearly until finding prefix. Prefix must be in front of sv.
-bool sv_has_prefix(String_View sv, String_View prefix){
+int sv_has_prefix(String_View sv, String_View prefix){
     if(prefix.count <= sv.count){
         for(size_t i = 0; i < prefix.count; ++i){
             if(prefix.data[i] != sv.data[i]){
-                return false;
+                return 0;
             }
         }
-        return true;
+        return 1;
     } else{
-        return false;
+        return 0;
     }
 }
 
 // check if sv is equal to each other.
-bool sv_eq(String_View a, String_View b){
+int sv_eq(String_View a, String_View b){
     if(a.count != b.count){
-        return false;
+        return 0;
     } else {
         return memcmp(a.data, b.data, a.count) == 0;
     }
@@ -219,17 +219,27 @@ bool sv_eq(String_View a, String_View b){
     i=1,  reads 2,  result = 1*10 + 2 = 12
     i=2,  reads 3,  result = 12*10 + 3 = 123
     i=3,  reads 4,  result = 123*10 + 4 = 1234
+
+
+    UPDATES: cast to long double
+    if not digit return as 0
 */
 
-int sv_to_u64(String_View sv)
+int sv_to_u64(String_View sv, long double *output)
 {
-    int result = 0;
+    long double result = 0;
 
     for (size_t i = 0; i < sv.count && isdigit(sv.data[i]); ++i) {
-        result = result * 10 + (int)sv.data[i] - '0';
-    }
+        result = result * 10 + (long double)(int)sv.data[i] - '0';
+        if(isdigit(sv.data[i])){
 
-    return result;
+        } else {
+            *output = 0;
+            return 1;
+        }
+    }
+    *output = result;
+    return 0;
 }
 
 // ============================================================
