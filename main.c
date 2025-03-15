@@ -110,7 +110,9 @@ int main(int argc, char** argv)
 		INFO("-i <integer series>");
 		INFO("Example 1:  ./geom -i 1 2 4 16 64");
 		INFO("Example 2:  ./geom -i 1 -2.1 4.41 -9.261\n");
-		INFO("-u <- User interface \n");
+
+		INFO("The UI Mode");
+		INFO("./geom -u");
 
 		exit(0);
 	} else {
