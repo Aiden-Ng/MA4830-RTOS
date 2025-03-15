@@ -74,8 +74,9 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 
 int main(int argc, char** argv)
 {
+	// argc = 8;
+	// char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
 	// argc = 2;
-	// // char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
 	// char * list[] = {"./program.exe","-u"};
 	// argv = list;
 	
@@ -84,7 +85,6 @@ int main(int argc, char** argv)
     // }
 
 	const char *program = shift(&argc, &argv);
-	printf("%s\n", program);
 
 	// Why is this here? Duplicated with the loop?
 	if(argc == 0){
@@ -272,23 +272,22 @@ int main(int argc, char** argv)
 		if(strcmp(flag, "-u") == 0){
 			free((void*)input_str);
 		}
-			// free(args_initial_ptr);
+			
 	}
 
 	// this part is specifically for output to screen, all the data inputs by user
 	long double data_toscr = 0;
-	fprintf(stdout, "\n");
+	// fprintf(stdout, "\n");
 	for(size_t i = 0; i < actual_buffer.size / sizeof(long double); ++i){
 		
 		/*	How does buffer_read work ?
 		
 			buffer_read access the buffer like an array
 		*/
-		
 		buffer_read(&actual_buffer, i, &data_toscr);
-		//INFO("	  %18.9Lf", data_toscr);  // for debug
+		// INFO("	  %18.9Lf", data_toscr);  // for debug
 	}
-	fprintf(stdout, "\n");
+	// fprintf(stdout, "\n");
 
 	// check Geometric Series
 	// wrong_data is a buffer for all the wrong datas
