@@ -9,10 +9,10 @@
 #include <stdbool.h>
 
 #include "function.c"
-#include "graph.c" // this is to print the graph, Aiden
-#include "UI_func.c" //this is to have the ui, daniel's part
+#include "graph.c" 
+#include "UI_func.c" 
 
-#define PRECISION 1e-9
+#define PRECISION 1e-9 
 
 static Buffer actual_buffer = {0};
 static Buffer wrong_data = {0};
@@ -56,7 +56,6 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 		convergence_flag = true; //convergence
 	}
 
-
 	for(int i = 1; i < count; ++i){
 		z = z * r;
 		if(isDoubleEqual(z, buffer->data[i])){
@@ -74,36 +73,27 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 
 int main(int argc, char** argv)
 {
-	// argc = 8;
-	// char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
-	// argc = 2;
-	// char * list[] = {"./program.exe","-u"};
-	// argv = list;
-	
-	// for (int i = 0; i < argc; i++) {
-    //     printf("argv[%d]: %s\n", i, argv[i]);
-    // }
-
 	const char *program = shift(&argc, &argv);
-	// Why is this here? Duplicated with the loop?
+
 	if(argc == 0){
 		INFO("Usage: %s -i <int arrays>", program);
 		PANIC("ERROR: No flag provided");
 	}
 
-	// this checks user flags
+	// this checks user flags <> -i, -u, -h
 	const char *flag = shift(&argc, &argv);
-	if(strcmp(flag, "-i") == 0){
+	if(strcmp(flag, "-i") == 0){ //immediate input mode
 		if(argc == 0){
 			INFO("Usage: %s -i <integer Series>", program);
 			INFO("Example 1:  ./geom -i 1 2 4 16 64");
 			INFO("Example 2:  ./geom -i 1 -2.1 4.41 -9.261 ");
 			PANIC("ERROR: No argument is provided for flag '%s'", flag);
 		}
-	} else if(strcmp(flag, "-u") == 0){
+	} else if(strcmp(flag, "-u") == 0){ //user input mode
 		INFO("%s\n", "UI mode");
 		SeriesData_to_str(&argc, &argv);
-	} else if(strcmp(flag, "-h") == 0){
+
+	} else if(strcmp(flag, "-h") == 0){ //help section
 		INFO("%s\n", "This is the help section");
 		INFO("There are 2 modes available: \n");
 		INFO("-i <integer series>");
@@ -118,62 +108,22 @@ int main(int argc, char** argv)
 		INFO("Usage: %s -i <int arrays>", program);
 		PANIC("ERROR: Unknown flag '%s'", flag);
 	}
-	char ** args_initial_ptr;
-	args_initial_ptr = argv;
-
-	//int temp_buffer_to_clear = argc; //holds a temporary placeholder for number of args beacuse we need to do a for loop at the end to clear release the buffer
+	
+	char ** args_initial_ptr; //this is to initialize the pointer for freeing the malloc for -u mode at the end of the whole code
+	args_initial_ptr = argv; //the reason for doing this because malloc is used to create storage for -u mode
 	while(argc > 0){
 
 		const char *input_str = shift(&argc, &argv);
-		
-		/*
-			converts char array aka string
-			lets say string = "This is a string"
-			string_view =
-				.data = "This is a string"
-				.count = 16
-		*/
 
 		String_View input_sv = sv_from_cstr(input_str);
-		String_View original = input_sv;  						// makes a copy of input_sv
-
-		/*
-			string_view neg =
-				.data = "-"
-				.count = 1
-		*/
-
+		String_View original = input_sv;  // makes a copy of input_sv
 		String_View neg = sv_from_cstr("-");	
-
 		long double _decimal, input_num, rounding_overflow, zero = 0;
-
-		/*
-			search linearly until finding prefix. Prefix must be in front of sv.
-			For example,  input = "-123"
-				returns 1 if found prefix
-				returns 0 if not found prefix
-		*/
+	
 		if(sv_has_prefix(input_sv , neg)){
 			sv_chop_by_delim(&input_sv, '-');
 		}
 		String_View before_dot = sv_chop_by_delim(&input_sv, '.');
-
-		/*	How does sv_chop_by_delim work? 
-			Example 1:
-				input: "-12.345"
-
-				sv_chop_by_delim(input, '-')
-				overwrite the input					: 12.345
-				return value, not stored			: -
-
-			Example 2:
-			    input: "-12.345"
-
-				before_dot = sv_chop_by_delim( input, '.')
-				overwrite the input					:   345
-				return value, stored in before_dot	:   -12
-		*/
-		
 
 		//  check if integer overflow  1_e19 is max
 		//  If overflow, replace that number is 0
@@ -186,28 +136,6 @@ int main(int argc, char** argv)
 			input_sv.count = 0;
 		}
 
-		/*	How does sv_to_u64 work? 
-
-			Theory: by casting (int) to a string, you get the ASCII value, minus of '0', you get integer
-			
-			input:  1234
-			initially, result = 0
-			i=0,  reads 1,  result = 0*10 + 1 = 1
-			i=1,  reads 2,  result = 1*10 + 2 = 12
-			i=2,  reads 3,  result = 12*10 + 3 = 123
-			i=3,  reads 4,  result = 123*10 + 4 = 1234
-
-			UPDATES: cast to long double
-			if non-digit is found, replace input_num with 0
-
-			function returns 1 if non-digit is found, otherwise return 0
-
-			function written like this so that, function can do 2 things:
-				1) return 1 and 0, to check non-digit
-				2) modify the input_num
-
-		*/
-
         if(sv_to_u64(before_dot, &input_num)){
 			buffer_write(&actual_buffer, &zero, sizeof(long double));
 			INFO("Detected non-digit in input %s", input_str);
@@ -215,26 +143,7 @@ int main(int argc, char** argv)
 			continue;
 		}
 	
-		/*
-			decimal overflow, round up
-			in our case, we take at most 9 decimals, if more than 9 decimals, 
-				the 10th decimal onwards will be rounded up, then add to the 9 decimals
-		
-		*/
-
-		/*
-			how does sv_chop_left work ?
-			similar to sv_chop_by_delim but instead of a char, we chop based on number
-
-			input: 123456789
-
-			overflow = sv_chop_left(input, 5)
-
-			overwrite the input 				: 6789
-			return value, stored in overflow	: 12345
-
-		*/
-		if(input_sv.count > 9){
+		if(input_sv.count > 9){ // decimal overflow, round up, we take at most 9 decimals, if more than 9 decimals, the 10th decimal onwards will be rounded up, then add to the 9 decimals
 			INFO("Detected Long Double Decimal Overflow at %s", input_str);
 			String_View overflow = sv_chop_left(&input_sv,9);
 			if(sv_to_u64(input_sv, &rounding_overflow)){
@@ -272,22 +181,13 @@ int main(int argc, char** argv)
 			input_num = input_num * (-1);
 		}
 
-
-		/*  How does buffer_write work
-			stores long double as bytes in an array
-			
-			before storing, need to realloc the old buffer so there is enough space for new data
-
-			before exiting, need to free;
-		*/
-
 		buffer_write(&actual_buffer, &input_num, sizeof(long double));
 		
-		//free the memory here
+		//free the malloc allocated for the -u mode
 		if(strcmp(flag, "-u") == 0){
+			//free the memory here
 			free((void*)input_str);
 		}
-			
 	}
 
 	// this part is specifically for output to screen, all the data inputs by user
@@ -295,10 +195,6 @@ int main(int argc, char** argv)
 	// fprintf(stdout, "\n");
 	for(size_t i = 0; i < actual_buffer.size / sizeof(long double); ++i){
 		
-		/*	How does buffer_read work ?
-		
-			buffer_read access the buffer like an array
-		*/
 		buffer_read(&actual_buffer, i, &data_toscr);
 		//INFO("	  %18.9Lf", data_toscr);  // for debug
 	}
@@ -313,7 +209,6 @@ int main(int argc, char** argv)
 				INFO("	  %29.9Lf  -->  %29.9Lf", wrong_data.data[i*2], wrong_data.data[i*2+1]);
 			}
 		} else {
-			
 			
 			plot_series(actual_buffer.data, actual_buffer.size / sizeof(long double));
 			INFO("Is a Geometric Series");
@@ -334,7 +229,7 @@ int main(int argc, char** argv)
 	buffer_free(&wrong_data);
 	
 	if(strcmp(flag, "-u") == 0){
-		free(args_initial_ptr); // free the malloced pointers for UI_func.c
+		free(args_initial_ptr); //free the malloced pointers for UI_func.c
 	}
 
 	return 0;
