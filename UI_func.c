@@ -44,7 +44,7 @@ SeriesData process_series(void) {
             }
             break;
         }
-// --------- D E B U G G I N G ---------
+
         // Validate the input as a number by attempting to convert it
         char *endptr;
         double value = strtod(input, &endptr);
@@ -54,11 +54,10 @@ SeriesData process_series(void) {
         }
 
         // For the first term, ensure it's not zero
-        if (data.n == 0 && value == 0) {
-            printf("Error: First term cannot be zero. Please enter a non-zero value.\n");
+        if ((data.n == 0 || data.n == 1) && value == 0 ) {
+            printf("Error: First and second term cannot be zero. Please enter a non-zero value.\n");
             continue;
         }
-// --------- D E B U G G I N G ---------
 
         // Resize the array if necessary
         if (data.n >= capacity) {
