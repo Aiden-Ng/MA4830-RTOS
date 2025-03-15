@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "function.c"
 #include "graph.c" // this is to print the graph, Aiden
@@ -15,6 +16,7 @@
 
 static Buffer actual_buffer = {0};
 static Buffer wrong_data = {0};
+bool convergence_flag = false;
 
 char *shift(int *argc, char ***argv){
 	assert(*argc > 0);
@@ -46,6 +48,12 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 
 	long double r = b / a;
 	long double z = a;
+
+	if (fabs(r) < 1)
+	{
+		convergence_flag = true; //convergence
+	}
+
 
 	for(int i = 1; i < count; ++i){
 		z = z * r;
@@ -278,8 +286,14 @@ int main(int argc, char** argv)
 			}
 		} else {
 			
-			INFO("Is a Geometric Series, with");
+			
 			plot_series(actual_buffer.data, actual_buffer.size / sizeof(long double));
+			INFO("Is a Geometric Series");
+			if (convergence_flag){
+				INFO("Type: 	Convergent Series");
+			} else {
+				INFO("Type: 	Divergent Series");
+			}
 			INFO("	  a = %18.9Lf", actual_buffer.data[0]);
 			INFO("	  r = %18.9Lf", actual_buffer.data[1] / actual_buffer.data[0]);			
 		}
