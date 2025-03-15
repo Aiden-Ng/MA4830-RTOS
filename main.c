@@ -8,10 +8,14 @@
 #include <math.h>
 
 #include "function.c"
+#include "graph.c" // this is to print the graph, Aiden
+#include "UI_func.c" //this is to have the ui, daniel's part
 
 #define PRECISION 1e-9
 
-// index through the input arguments
+static Buffer actual_buffer = {0};
+static Buffer wrong_data = {0};
+
 char *shift(int *argc, char ***argv){
 	assert(*argc > 0);
 	char* result = **argv;
@@ -42,10 +46,10 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 
 	long double r = b / a;
 	long double z = a;
+
 	for(int i = 1; i < count; ++i){
 		z = z * r;
 		if(isDoubleEqual(z, buffer->data[i])){
-			
 		} else {
 			buffer_write(wrong, &buffer->data[i], sizeof(long double));
 			buffer_write(wrong, &z, sizeof(long double));
@@ -54,21 +58,27 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 	return 1;
 }
 
-Buffer actual_buffer = {0};
-Buffer wrong_data = {0};
-
 int main(int argc, char** argv)
 {
+	argc = 2;
+	// char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
+	char * list[] = {"./program.exe","-u"};
+	argv = list;
+	
+	// for (int i = 0; i < argc; i++) {
+    //     printf("argv[%d]: %s\n", i, argv[i]);
+    // }
 
-	printf("MA4830 CA1\n\n");
 	const char *program = shift(&argc, &argv);
-	//printf("%s\n", program);
+	printf("%s\n", program);
 
+	// Why is this here? Duplicated with the loop?
 	if(argc == 0){
 		INFO("Usage: %s -i <int arrays>", program);
 		PANIC("ERROR: No flag provided");
 	}
 
+	// this checks user flags
 	const char *flag = shift(&argc, &argv);
 	if(strcmp(flag, "-i") == 0){
 		if(argc == 0){
@@ -77,15 +87,22 @@ int main(int argc, char** argv)
 		}
 	} else if(strcmp(flag, "-u") == 0){
 		INFO("%s\n", "UI mode");
-		exit(0);
+		SeriesData_to_str(&argc, &argv);
 	} else if(strcmp(flag, "-h") == 0){
 		INFO("%s\n", "This is the help section");
+		INFO("There are 2 modes available: \n");
+		INFO("-i <please insert your series with spaces between alternate numbers> <- Insert Parameter like argument in the cmd prompt \n");
+		INFO("-u <- User interface \n");
+
 		exit(0);
 	} else {
 		INFO("Usage: %s -i <int arrays>", program);
 		PANIC("ERROR: Unknown flag '%s'", flag);
 	}
+	char ** args_initial_ptr;
+	args_initial_ptr = argv;
 
+	int temp_buffer_to_clear = argc; //holds a temporary placeholder for number of args beacuse we need to do a for loop at the end to clear release the buffer
 	while(argc > 0){
 
 		const char *input_str = shift(&argc, &argv);
@@ -230,6 +247,10 @@ int main(int argc, char** argv)
 		*/
 
 		buffer_write(&actual_buffer, &input_num, sizeof(long double));
+		
+		//free the memory here
+		free((void*)input_str);
+		// free(args_initial_ptr);
 	}
 
 	// this part is specifically for output to screen, all the data inputs by user
@@ -243,7 +264,7 @@ int main(int argc, char** argv)
 		*/
 		
 		buffer_read(&actual_buffer, i, &data_toscr);
-		INFO("	  %18.9Lf", data_toscr);  // for debug
+		//INFO("	  %18.9Lf", data_toscr);  // for debug
 	}
 	fprintf(stdout, "\n");
 
@@ -256,7 +277,9 @@ int main(int argc, char** argv)
 				INFO("	  %18.9Lf  -->  %18.9Lf", wrong_data.data[i*2], wrong_data.data[i*2+1]);
 			}
 		} else {
+			
 			INFO("Is a Geometric Series, with");
+			plot_series(actual_buffer.data, actual_buffer.size / sizeof(long double));
 			INFO("	  a = %18.9Lf", actual_buffer.data[0]);
 			INFO("	  r = %18.9Lf", actual_buffer.data[1] / actual_buffer.data[0]);			
 		}
@@ -267,5 +290,8 @@ int main(int argc, char** argv)
 	// free the malloc	
 	buffer_free(&actual_buffer);
 	buffer_free(&wrong_data);
+
+	free(args_initial_ptr); // free the malloced pointers for UI_func.c
+
 	return 0;
 }

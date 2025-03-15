@@ -12,14 +12,17 @@ typedef struct
 } String_View;
 
 typedef struct{
-    size_t size;
-    size_t capacity;
+    size_t size; //what is the difference between size and capacity
+    size_t capacity; //
     long double *data;
 } Buffer;
 
 // ====================  Buffer related functions  ========================================
 
-
+/*  
+    resize buffer to new_capacity, my current code, size is same as capacity. just by
+    reading  [ buffer->size / sizeof(int) ], i know how many integer inside the buffer
+*/
 static void buffer_resize(Buffer *buffer, size_t new_capacity){
     buffer->capacity = new_capacity;
     buffer->data = realloc(buffer->data, buffer->capacity);
@@ -29,7 +32,7 @@ static void buffer_write(Buffer *buffer, const long double *data, size_t size){
     if(buffer->size + size > buffer->capacity){
         buffer_resize(buffer, buffer->capacity + size);
     }
-    memcpy(buffer->data + (buffer->size / sizeof(long double)), data, size);
+    memcpy(buffer->data + (buffer->size / sizeof(long double)), data, size); //is this incrementing it? the + (buffer->size / sizeof(int)) part
     buffer->size += size;
 }
 
@@ -113,7 +116,7 @@ int sv_to_u64(String_View sv, long double *output)
 
         } else {
             *output = 0;
-            return 1;
+            continue;
         }
     }
     *output = result;
