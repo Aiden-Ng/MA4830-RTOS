@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 	while(argc > 0){
 
 		const char *input_str = shift(&argc, &argv);
-
+		
 		/*
 			converts char array aka string
 			lets say string = "This is a string"
@@ -269,8 +269,10 @@ int main(int argc, char** argv)
 		buffer_write(&actual_buffer, &input_num, sizeof(long double));
 		
 		//free the memory here
-		free((void*)input_str);
-		// free(args_initial_ptr);
+		if(strcmp(flag, "-u") == 0){
+			free((void*)input_str);
+		}
+			// free(args_initial_ptr);
 	}
 
 	// this part is specifically for output to screen, all the data inputs by user
@@ -316,8 +318,10 @@ int main(int argc, char** argv)
 	// free the malloc	
 	buffer_free(&actual_buffer);
 	buffer_free(&wrong_data);
-
-	free(args_initial_ptr); // free the malloced pointers for UI_func.c
+	
+	if(strcmp(flag, "-u") == 0){
+		free(args_initial_ptr); // free the malloced pointers for UI_func.c
+	}
 
 	return 0;
 }

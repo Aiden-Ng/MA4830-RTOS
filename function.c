@@ -116,7 +116,7 @@ int sv_to_u64(String_View sv, long double *output)
 
         } else {
             *output = 0;
-            continue;
+            return 1;
         }
     }
     *output = result;
