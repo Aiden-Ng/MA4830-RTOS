@@ -60,10 +60,10 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 
 int main(int argc, char** argv)
 {
-	argc = 2;
-	// char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
-	char * list[] = {"./program.exe","-u"};
-	argv = list;
+	// argc = 2;
+	// // char * list[] = {"./program.exe","-i", "1", "2", "4", "8", "32", "64"};
+	// char * list[] = {"./program.exe","-u"};
+	// argv = list;
 	
 	// for (int i = 0; i < argc; i++) {
     //     printf("argv[%d]: %s\n", i, argv[i]);
