@@ -11,7 +11,8 @@
 
 #define PRECISION 1e-9
 
-static char *shift(int *argc, char ***argv){
+// index through the input arguments
+char *shift(int *argc, char ***argv){
 	assert(*argc > 0);
 	char* result = **argv;
 	*argv += 1;
@@ -19,10 +20,12 @@ static char *shift(int *argc, char ***argv){
 	return result;
 }
 
+// compare 2 long double values, and ignore overflow
 int isDoubleEqual(double a, double b){
 	return fabs(a - b) < PRECISION;
 }
 
+// check whether is geometric series
 int checkGeometric(Buffer *buffer, Buffer *wrong){
 	int count = buffer->size/sizeof(long double);
 	if (count < 2){
@@ -51,8 +54,8 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 	return 1;
 }
 
-static Buffer actual_buffer = {0};
-static Buffer wrong_data = {0};
+Buffer actual_buffer = {0};
+Buffer wrong_data = {0};
 
 int main(int argc, char** argv)
 {
@@ -84,19 +87,59 @@ int main(int argc, char** argv)
 	}
 
 	while(argc > 0){
+
 		const char *input_str = shift(&argc, &argv);
+
+		/*
+			converts char array aka string
+			lets say string = "This is a string"
+			string_view =
+				.data = "This is a string"
+				.count = 16
+		*/
+
 		String_View input_sv = sv_from_cstr(input_str);
-		String_View original = input_sv;
-		String_View neg = sv_from_cstr("-");
-		
+		String_View original = input_sv;  						// makes a copy of input_sv
+
+		/*
+			string_view neg =
+				.data = "-"
+				.count = 1
+		*/
+
+		String_View neg = sv_from_cstr("-");	
 		long double _decimal, input_num, rounding_overflow = 0;
 
+		/*
+			search linearly until finding prefix. Prefix must be in front of sv.
+			For example,  input = "-123"
+				returns 1 if found prefix
+				returns 0 if not found prefix
+		*/
 		if(sv_has_prefix(input_sv , neg)){
 			sv_chop_by_delim(&input_sv, '-');
 		}
 		String_View before_dot = sv_chop_by_delim(&input_sv, '.');
 
-		// integer overflow, replacing with 0
+		/*	How does sv_chop_by_delim work? 
+			Example 1:
+				input: "-12.345"
+
+				sv_chop_by_delim(input, '-')
+				overwrite the input					: 12.345
+				return value, not stored			: -
+
+			Example 2:
+			    input: "-12.345"
+
+				before_dot = sv_chop_by_delim( input, '.')
+				overwrite the input					:   345
+				return value, stored in before_dot	:   -12
+		*/
+		
+
+		//  check if integer overflow  1_e19 is max
+		//  If overflow, replace that number is 0
 		if(before_dot.count > 19){
 			INFO("Long Double Integer Overflow detected at %s", input_str);
 			INFO("Replacing with 0 . . . . . . ");
@@ -105,9 +148,55 @@ int main(int argc, char** argv)
 			input_sv.data = "";
 			input_sv.count = 0;
 		}
-        sv_to_u64(before_dot, &input_num);
+
+		/*	How does sv_to_u64 work? 
+
+			Theory: by casting (int) to a string, you get the ASCII value, minus of '0', you get integer
+			
+			input:  1234
+			initially, result = 0
+			i=0,  reads 1,  result = 0*10 + 1 = 1
+			i=1,  reads 2,  result = 1*10 + 2 = 12
+			i=2,  reads 3,  result = 12*10 + 3 = 123
+			i=3,  reads 4,  result = 123*10 + 4 = 1234
+
+			UPDATES: cast to long double
+			if non-digit is found, replace input_num with 0
+
+			function returns 1 if non-digit is found, otherwise return 0
+
+			function written like this so that, function can do 2 things:
+				1) return 1 and 0, to check non-digit
+				2) modify the input_num
+
+		*/
+
+        if(sv_to_u64(before_dot, &input_num)){
+			buffer_write(&actual_buffer, &input_num, sizeof(long double));
+			INFO("Detected non-digit in input %s", input_str);
+			INFO("Replacing with 0 . . . . . ");
+			continue;
+		}
 	
-		// decimal overflow, round up
+		/*
+			decimal overflow, round up
+			in our case, we take at most 9 decimals, if more than 9 decimals, 
+				the 10th decimal onwards will be rounded up, then add to the 9 decimals
+		
+		*/
+
+		/*
+			how does sv_chop_left work ?
+			similar to sv_chop_by_delim but instead of a char, we chop based on number
+
+			input: 123456789
+
+			overflow = sv_chop_left(input, 5)
+
+			overwrite the input 				: 6789
+			return value, stored in overflow	: 12345
+
+		*/
 		if(input_sv.count > 9){
 			INFO("Long Double Decimal Overflow detected for %s", input_str);
 			String_View overflow = sv_chop_left(&input_sv,9);
@@ -119,17 +208,27 @@ int main(int argc, char** argv)
 			input_num += _decimal;
 			INFO("Rounding into %Lf", input_num);
 		} else {
-			// normal condition
-			 sv_to_u64(input_sv, &_decimal);
+			// if no overflow, run these
+			sv_to_u64(input_sv, &_decimal);
 			_decimal = _decimal / powl(10,input_sv.count);
 			input_num += _decimal;
 		}
 
 		// multiple -1 for negative value
-		// Sadly need to init a copy of input_sv as original so we can check here.
+		// using original because input_sv has been modified
 		if(sv_has_prefix(original, neg)){
 			input_num = input_num * (-1);
 		}
+
+
+		/*  How does buffer_write work
+			stores long double as bytes in an array
+			
+			before storing, need to realloc the old buffer so there is enough space for new data
+
+			before exiting, need to free;
+		*/
+
 		buffer_write(&actual_buffer, &input_num, sizeof(long double));
 	}
 
@@ -137,12 +236,19 @@ int main(int argc, char** argv)
 	long double data_toscr = 0;
 	fprintf(stdout, "\n");
 	for(size_t i = 0; i < actual_buffer.size / sizeof(long double); ++i){
+		
+		/*	How does buffer_read work ?
+		
+			buffer_read access the buffer like an array
+		*/
+		
 		buffer_read(&actual_buffer, i, &data_toscr);
 		INFO("	  %18.9Lf", data_toscr);  // for debug
 	}
 	fprintf(stdout, "\n");
 
 	// check Geometric Series
+	// wrong_data is a buffer for all the wrong datas
 	if(checkGeometric(&actual_buffer, &wrong_data)){
 		if (wrong_data.size > 0){
 			INFO("Not a Geometric Series, wrong numbers are:");
@@ -157,7 +263,6 @@ int main(int argc, char** argv)
 	} else {
 		WARN("Checking Geometric Series Failed");
 	}
-
 
 	// free the malloc	
 	buffer_free(&actual_buffer);
