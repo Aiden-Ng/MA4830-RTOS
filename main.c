@@ -43,8 +43,8 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 	long double a = buffer->data[0];
 	long double b = buffer->data[1];
 	if (a == 0 || b == 0){
-		if(a == 0) WARN("DETECTED first value is 0");
-		if(b == 0) WARN("DETECTED second value is 0");
+		if(a == 0) WARN("Detected first value is 0");
+		if(b == 0) WARN("Detected second value is 0");
 		return 0;
 	}
 
@@ -85,7 +85,6 @@ int main(int argc, char** argv)
     // }
 
 	const char *program = shift(&argc, &argv);
-
 	// Why is this here? Duplicated with the loop?
 	if(argc == 0){
 		INFO("Usage: %s -i <int arrays>", program);
@@ -145,7 +144,8 @@ int main(int argc, char** argv)
 		*/
 
 		String_View neg = sv_from_cstr("-");	
-		long double _decimal, input_num, rounding_overflow = 0;
+
+		long double _decimal, input_num, rounding_overflow, zero = 0;
 
 		/*
 			search linearly until finding prefix. Prefix must be in front of sv.
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 		//  check if integer overflow  1_e19 is max
 		//  If overflow, replace that number is 0
 		if(before_dot.count > 19){
-			INFO("Long Double Integer Overflow detected at %s", input_str);
+			INFO("Detected Long Double Integer Overflow at %s", input_str);
 			INFO("Replacing with 0 . . . . . . ");
 			before_dot.data = "0";
 			before_dot.count = 1;
@@ -209,7 +209,7 @@ int main(int argc, char** argv)
 		*/
 
         if(sv_to_u64(before_dot, &input_num)){
-			buffer_write(&actual_buffer, &input_num, sizeof(long double));
+			buffer_write(&actual_buffer, &zero, sizeof(long double));
 			INFO("Detected non-digit in input %s", input_str);
 			INFO("Replacing with 0 . . . . . ");
 			continue;
@@ -235,18 +235,33 @@ int main(int argc, char** argv)
 
 		*/
 		if(input_sv.count > 9){
-			INFO("Long Double Decimal Overflow detected for %s", input_str);
+			INFO("Detected Long Double Decimal Overflow at %s", input_str);
 			String_View overflow = sv_chop_left(&input_sv,9);
-			sv_to_u64(input_sv, &rounding_overflow);
+			if(sv_to_u64(input_sv, &rounding_overflow)){
+				buffer_write(&actual_buffer, &zero, sizeof(long double));
+				INFO("Detected non-digit in input %s", input_str);
+				INFO("Replacing with 0 . . . . . ");
+				continue;
+			}
 			rounding_overflow = round(rounding_overflow / powl(10,input_sv.count) );
-			sv_to_u64(overflow, &_decimal);
+			if(sv_to_u64(overflow, &_decimal)){
+				buffer_write(&actual_buffer, &zero, sizeof(long double));
+				INFO("Detected non-digit in input %s", input_str);
+				INFO("Replacing with 0 . . . . . ");
+				continue;
+			}
 			_decimal += rounding_overflow;
 			_decimal = _decimal / powl(10,overflow.count);
 			input_num += _decimal;
 			INFO("Rounding into %Lf", input_num);
 		} else {
 			// if no overflow, run these
-			sv_to_u64(input_sv, &_decimal);
+			if(sv_to_u64(input_sv, &_decimal)){
+				buffer_write(&actual_buffer, &zero, sizeof(long double));
+				INFO("Detected non-digit in input %s", input_str);
+				INFO("Replacing with 0 . . . . . ");
+				continue;
+			}
 			_decimal = _decimal / powl(10,input_sv.count);
 			input_num += _decimal;
 		}
@@ -285,9 +300,9 @@ int main(int argc, char** argv)
 			buffer_read access the buffer like an array
 		*/
 		buffer_read(&actual_buffer, i, &data_toscr);
-		// INFO("	  %18.9Lf", data_toscr);  // for debug
+		//INFO("	  %18.9Lf", data_toscr);  // for debug
 	}
-	// fprintf(stdout, "\n");
+	fprintf(stdout, "\n"); // please do not comment this
 
 	// check Geometric Series
 	// wrong_data is a buffer for all the wrong datas
