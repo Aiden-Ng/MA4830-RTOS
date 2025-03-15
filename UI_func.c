@@ -1,3 +1,6 @@
+#ifndef __UI_FUNC_C__
+#define __UI_FUNC_C__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,8 +77,13 @@ SeriesData process_series(void) {
             data.terms = temp;
         }
 
-        // Duplicate the input string and save it into the array
-        data.terms[data.n] = strdup(input);
+        size_t len = strlen(input) + 1;
+        char *copy = malloc(len);
+        if (copy != NULL) {
+            memcpy(copy, input, len);
+        }
+
+        data.terms[data.n] = copy;
         if (!data.terms[data.n]) {
             printf("Memory allocation for term failed.\n");
             for (int i = 0; i < data.n; i++) {
@@ -141,4 +149,6 @@ int SeriesData_to_str(int *argc, char ***argv) {
 //     return 0;
 
 // }
+
+#endif 
 

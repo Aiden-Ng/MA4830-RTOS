@@ -23,12 +23,12 @@ typedef struct{
     resize buffer to new_capacity, my current code, size is same as capacity. just by
     reading  [ buffer->size / sizeof(int) ], i know how many integer inside the buffer
 */
-static void buffer_resize(Buffer *buffer, size_t new_capacity){
+void buffer_resize(Buffer *buffer, size_t new_capacity){
     buffer->capacity = new_capacity;
     buffer->data = realloc(buffer->data, buffer->capacity);
 }
 
-static void buffer_write(Buffer *buffer, const long double *data, size_t size){
+void buffer_write(Buffer *buffer, const long double *data, size_t size){
     if(buffer->size + size > buffer->capacity){
         buffer_resize(buffer, buffer->capacity + size);
     }
@@ -36,14 +36,14 @@ static void buffer_write(Buffer *buffer, const long double *data, size_t size){
     buffer->size += size;
 }
 
-static void buffer_free(Buffer *buffer){
+void buffer_free(Buffer *buffer){
     free(buffer->data);
     buffer->data = NULL;
     buffer->size = 0;
     buffer->capacity = 0;
 }
 
-static int buffer_read(Buffer *buffer, size_t index, long double *out_value){
+int buffer_read(Buffer *buffer, size_t index, long double *out_value){
     if (index >= buffer->size){
         return 0;
     }

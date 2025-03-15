@@ -33,6 +33,8 @@ int isDoubleEqual(double a, double b){
 
 // check whether is geometric series
 int checkGeometric(Buffer *buffer, Buffer *wrong){
+	long double error = 404;
+
 	int count = buffer->size/sizeof(long double);
 	if (count < 2){
 		INFO("isGeometric Fault: Please input at least 2 values");
@@ -49,7 +51,7 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 	long double r = b / a;
 	long double z = a;
 
-	if (fabs(r) < 1)
+	if (fabsl(r) < 1)
 	{
 		convergence_flag = true; //convergence
 	}
@@ -60,7 +62,11 @@ int checkGeometric(Buffer *buffer, Buffer *wrong){
 		if(isDoubleEqual(z, buffer->data[i])){
 		} else {
 			buffer_write(wrong, &buffer->data[i], sizeof(long double));
-			buffer_write(wrong, &z, sizeof(long double));
+			if(z > 1e20){
+				buffer_write(wrong, &error, sizeof(long double));
+			} else {
+				buffer_write(wrong, &z, sizeof(long double));
+			}
 		};
 	}
 	return 1;
@@ -90,7 +96,9 @@ int main(int argc, char** argv)
 	const char *flag = shift(&argc, &argv);
 	if(strcmp(flag, "-i") == 0){
 		if(argc == 0){
-			INFO("Usage: %s -i <int arrays>", program);
+			INFO("Usage: %s -i <integer Series>", program);
+			INFO("Example 1:  ./geom -i 1 2 4 16 64");
+			INFO("Example 2:  ./geom -i 1 -2.1 4.41 -9.261 ");
 			PANIC("ERROR: No argument is provided for flag '%s'", flag);
 		}
 	} else if(strcmp(flag, "-u") == 0){
@@ -99,7 +107,9 @@ int main(int argc, char** argv)
 	} else if(strcmp(flag, "-h") == 0){
 		INFO("%s\n", "This is the help section");
 		INFO("There are 2 modes available: \n");
-		INFO("-i <please insert your series with spaces between alternate numbers> <- Insert Parameter like argument in the cmd prompt \n");
+		INFO("-i <integer series>");
+		INFO("Example 1:  ./geom -i 1 2 4 16 64");
+		INFO("Example 2:  ./geom -i 1 -2.1 4.41 -9.261\n");
 		INFO("-u <- User interface \n");
 
 		exit(0);
@@ -110,7 +120,7 @@ int main(int argc, char** argv)
 	char ** args_initial_ptr;
 	args_initial_ptr = argv;
 
-	int temp_buffer_to_clear = argc; //holds a temporary placeholder for number of args beacuse we need to do a for loop at the end to clear release the buffer
+	//int temp_buffer_to_clear = argc; //holds a temporary placeholder for number of args beacuse we need to do a for loop at the end to clear release the buffer
 	while(argc > 0){
 
 		const char *input_str = shift(&argc, &argv);
@@ -282,7 +292,7 @@ int main(int argc, char** argv)
 		if (wrong_data.size > 0){
 			INFO("Not a Geometric Series, wrong numbers are:");
 			for(size_t i = 0; i < ((wrong_data.size)/2) / sizeof(long double); ++i){
-				INFO("	  %18.9Lf  -->  %18.9Lf", wrong_data.data[i*2], wrong_data.data[i*2+1]);
+				INFO("	  %29.9Lf  -->  %29.9Lf", wrong_data.data[i*2], wrong_data.data[i*2+1]);
 			}
 		} else {
 			

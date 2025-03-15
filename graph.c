@@ -1,9 +1,14 @@
+#ifndef  __GRAPH_C__
+#define __GRAPH_C__
+
 //This is to plot the graph, additional file on top of fudens
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> //this is for realloc
 #include <math.h>   //this is for fabs
+
+long double y_val;
 
 // ---------------- S i g n a t u r e ----------------
 int PLOT_HEIGHT = 20;
@@ -12,7 +17,7 @@ void plot_series(long double terms[], int n) {
 
     long double max_abs = 0.0;
     for (int i = 0; i < n; i++) {
-        long double abs_val = fabs(terms[i]); //getting the absolute values
+        long double abs_val = fabsl(terms[i]); //getting the absolute values
         if (abs_val > max_abs) max_abs = abs_val; //resetting the max values
     }
 
@@ -40,12 +45,12 @@ void plot_series(long double terms[], int n) {
 
     // how to i get the max size of the y_val
     for (int row = PLOT_HEIGHT - 1; row >= 0; row--) {
-        long double y_val = ((row / (long double)(PLOT_HEIGHT-1)) * 2 * max_abs - max_abs);
+        y_val = ((row / (long double)(PLOT_HEIGHT-1)) * 2 * max_abs - max_abs);
     }
     // Print plot
-    printf("\nSeries Plot (max=%.2f):\n", max_abs);
+    printf("\nSeries Plot (max=%.2Lf):\n", max_abs);
     for (int row = PLOT_HEIGHT - 1; row >= 0; row--) {
-        long double y_val = ((row / (long double)(PLOT_HEIGHT-1)) * 2 * max_abs - max_abs);
+        y_val = ((row / (long double)(PLOT_HEIGHT-1)) * 2 * max_abs - max_abs);
         int spacing = (int)log10(max_abs) + 5; //5 because u need to include the negative, dot and decimals
         printf("%*.2Lf | ",spacing, y_val); 
         for (int col = 0; col < n; col++) {
@@ -62,3 +67,4 @@ void plot_series(long double terms[], int n) {
     printf("\n");
 }
 
+#endif
