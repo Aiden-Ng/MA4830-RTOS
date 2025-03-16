@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 	const char *program = shift(&argc, &argv);
 
 	if(argc == 0){
-		INFO("Usage: %s -i <int arrays>", program);
+		INFO("./geom -h", program);
 		PANIC("ERROR: No flag provided");
 	}
 
@@ -93,16 +93,15 @@ int main(int argc, char** argv)
 		INFO("%s\n", "UI mode");
 		SeriesData_to_str(&argc, &argv);
 
-	} else if(strcmp(flag, "-h") == 0){ //help section
-		INFO("%s\n", "This is the help section");
+	} else if(strcmp(flag, "-h") == 0 || strcmp(flag, "-help") == 0){ //help section
+		printf("\n");
+		INFO("This is the help section");
 		INFO("There are 2 modes available: \n");
-		INFO("-i <integer series>");
+		INFO("Immediate mode:  -i <integer series>");
 		INFO("Example 1:  ./geom -i 1 2 4 16 64");
 		INFO("Example 2:  ./geom -i 1 -2.1 4.41 -9.261\n");
 
-		INFO("The UI Mode");
-		INFO("./geom -u");
-
+		INFO("UI Mode:  ./geom -u");
 		exit(0);
 	} else {
 		INFO("Usage: %s -i <int arrays>", program);
@@ -125,11 +124,11 @@ int main(int argc, char** argv)
 		}
 		String_View before_dot = sv_chop_by_delim(&input_sv, '.');
 
-		//  check if integer overflow  1_e19 is max
+		//  check if integer overflow,  1_e19 is max
 		//  If overflow, replace that number is 0
 		if(before_dot.count > 19){
-			INFO("Detected Long Double Integer Overflow at %s", input_str);
-			INFO("Replacing with 0 . . . . . . ");
+			WARN("Detected Long Double Integer Overflow at %s", input_str);
+			WARN("Replacing with 0 . . . . . . ");
 			before_dot.data = "0";
 			before_dot.count = 1;
 			input_sv.data = "";
@@ -138,8 +137,8 @@ int main(int argc, char** argv)
 
         if(sv_to_u64(before_dot, &input_num)){
 			buffer_write(&actual_buffer, &zero, sizeof(long double));
-			INFO("Detected non-digit in input %s", input_str);
-			INFO("Replacing with 0 . . . . . ");
+			WARN("Detected non-digit in input %s", input_str);
+			WARN("Replacing with 0 . . . . . ");
 			continue;
 		}
 	
@@ -148,15 +147,15 @@ int main(int argc, char** argv)
 			String_View overflow = sv_chop_left(&input_sv,9);
 			if(sv_to_u64(input_sv, &rounding_overflow)){
 				buffer_write(&actual_buffer, &zero, sizeof(long double));
-				INFO("Detected non-digit in input %s", input_str);
-				INFO("Replacing with 0 . . . . . ");
+				WARN("Detected non-digit in input %s", input_str);
+				WARN("Replacing with 0 . . . . . ");
 				continue;
 			}
 			rounding_overflow = round(rounding_overflow / powl(10,input_sv.count) );
 			if(sv_to_u64(overflow, &_decimal)){
 				buffer_write(&actual_buffer, &zero, sizeof(long double));
-				INFO("Detected non-digit in input %s", input_str);
-				INFO("Replacing with 0 . . . . . ");
+				WARN("Detected non-digit in input %s", input_str);
+				WARN("Replacing with 0 . . . . . ");
 				continue;
 			}
 			_decimal += rounding_overflow;
@@ -167,8 +166,8 @@ int main(int argc, char** argv)
 			// if no overflow, run these
 			if(sv_to_u64(input_sv, &_decimal)){
 				buffer_write(&actual_buffer, &zero, sizeof(long double));
-				INFO("Detected non-digit in input %s", input_str);
-				INFO("Replacing with 0 . . . . . ");
+				WARN("Detected non-digit in input %s", input_str);
+				WARN("Replacing with 0 . . . . . ");
 				continue;
 			}
 			_decimal = _decimal / powl(10,input_sv.count);
@@ -196,9 +195,12 @@ int main(int argc, char** argv)
 	for(size_t i = 0; i < actual_buffer.size / sizeof(long double); ++i){
 		
 		buffer_read(&actual_buffer, i, &data_toscr);
-		//INFO("	  %18.9Lf", data_toscr);  // for debug
+		//INFO("	  %18.9Lf", data_toscr);
+		/*
+			uncomment this to see user input, in immediate mode
+		*/
 	}
-	fprintf(stdout, "\n"); // please do not comment this
+	fprintf(stdout, "\n");
 
 	// check Geometric Series
 	// wrong_data is a buffer for all the wrong datas

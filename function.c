@@ -217,7 +217,7 @@ void INFO(const char* fmt, ...){
 void WARN(const char* fmt, ...){
     va_list args;
     va_start(args, fmt);
-    VLOG(stderr, "wARN", fmt, args);
+    VLOG(stderr, "WARN", fmt, args);
     va_end(args);
 }
 
